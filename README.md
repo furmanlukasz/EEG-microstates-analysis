@@ -15,7 +15,7 @@ Aim of this project is to identify the microstates of a 64-channel EEG signal of
 ### Data
 - `S092R02.edf` Data are publicly available on [PhysioNet](https://physionet.org) in .edf format. The 64 channels correspond to 64 electrodes placed according to the international standard 10-10 system, whose signals were recorded using the BCI2000 system. 
 
-## Utility 
+### Utility 
 - `edfread.m` script used to import .edf files.
 - `gfp_plot.mlx`
 - `init_ms_seq.m`
