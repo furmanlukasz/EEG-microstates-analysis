@@ -1,4 +1,4 @@
-# EEG Microstate Analysis of a healthy subject in resting conditions.
+# Microstates Analysis of a 64-channels EEG signal recorded from an healthy subject during closed-eyes resting condition.
 
 Electroencephalography (EEG) is a very useful method to study the electrophysiology of the brain in a resting state with high temporal resolution. In particular, it allows characterizing spontaneous brain activity that is not detected when a subject performs cognitive tasks.
 
