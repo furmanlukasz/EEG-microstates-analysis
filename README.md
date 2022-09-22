@@ -4,7 +4,7 @@ Electroencephalography (EEG) is a very useful method to study the electrophysiol
 
 Several analytical approaches have been proposed to extract information from the EEG signal, one of which, called Microstate Analysis, considers the multichannel EEG as a series of semi-stable microstates each of which is characterized by a unique topography of electrical potentials with respect to channels. 
 
-Aim of this project is to identify the microstates of a 64-channel EEG signal of a subject at rest and with eyes closed and then study its variation over time. 
+Aim of this project was to identify the microstates of a 64-channel EEG signal of a subject at rest and with eyes closed, studying its variation over time. 
 
 ## Contents
 
