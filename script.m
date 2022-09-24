@@ -1,7 +1,7 @@
 clearvars;
 close all;
 
-% Label dei 64 Canali
+% 64 channels labels
 channels = {'FC5','FC3','FC1','FCZ','FC2','FC4','FC6','C5','C3','C1','CZ',...
     'C2' ,'C4' ,'C6' ,'CP5' ,'CP3' ,'CP1','CPZ','CP2','CP4','CP6','FP1','FPZ',...
     'FP2','AF7','AF3','AFZ' ,'AF4' ,'AF8','F7','F5','F3','F1','FZ' ,'F2','F4',...
@@ -9,7 +9,7 @@ channels = {'FC5','FC3','FC1','FCZ','FC2','FC4','FC6','C5','C3','C1','CZ',...
     'P3' ,'P1','PZ' ,'P2' ,'P4' ,'P6' ,'P8' ,'PO7','PO3','POZ','PO4','PO8',...
     'O1' ,'OZ' ,'O2','IZ'};  
 
-% Color map rosso-blu
+% Color map red-blu
 map = zeros(21,3);
 map(21,:) = [1,0,0];
 map(20,:) = [1,1/10,1/10];
@@ -35,15 +35,18 @@ map(1,:) = [0,0,1];
 
 col = ['r','b','g','c','y'];
 
-% Funzione necessaria per "head plot"
+n_channels = 64;
+T = 9632;
+
+% "head plot" utility function
 addpath('plot_topography');
 
-% Dati relativi al soggetto selezionato
+% Selected subject data
 [hdr, record] = edfread('S092R02.edf');
-record = record(1:64,1:9632);
+record = record(1:n_channels,1:T);
 
 
-% ------- Alternative di filtraggio non utilizzate --------- %
+% ------- Alternative filtering solutions --------- %
 % fs = 160;
 % fpass = [2 25];
 % record = bandpass(record, fpass, fs);
@@ -56,28 +59,29 @@ record = record(1:64,1:9632);
 record_t = record'; 
 
 
-%% Individuazione degli istanti di massima variazione dalla condizione di riposo: GFP
+%% Finding instants of max variation from rest condition: GFP
 
-% Calcolo GFP
-V_mean = mean(record_t,2);   % media dei potenziali istantanei tra gli elettrodi 
-GFP = zeros(1,9632);
-for i = 1 : 9632
-    GFP(i) = sqrt((sum((record_t(i,:)-V_mean(i)).^2))/64);
+% Compute Global Field Potential (GFP)
+V_mean = mean(record_t,2);   % instantaneous potential averaged between electrodes
+GFP = zeros(1,T);
+for i = 1 : T
+    GFP(i) = sqrt((sum((record_t(i,:)-V_mean(i)).^2))/n_channels);
 end
 
-% Calcolo dei picchi di GFP
+% Compute GFP peaks
 [pks, locs] = findpeaks(GFP);
 
 % Segnali eeg dei diversi canali nei picchi di GFP
 eeg_at_peaks = record_t(locs,:);
 
-%% Plot esempio di alcuni canali e GFP
+%% Example: eeg signal from certain channels and GFP
 
-to_plot = record_t;                % unisco i segnali eeg e GFP in una
-to_plot(:,65) = GFP';              % sola matrice per plot
+% to_plot = eeg signals together with GFP
+to_plot = record_t;               
+to_plot(:,65) = GFP';
 figure; 
-s = stackedplot(to_plot(100:180,[1,12,27,34,45,51,63,65]));
-    % plot di 80 campioni: intervallo di tempo pari a 0.5s (fs=160/s)
+% 80 samples plot: 0.5s time interval (fs=160/s)
+s = stackedplot(to_plot(100:180,[1,12,27,34,45,51,63,65]));         
 s.DisplayLabels = {'FC5','C2','AFZ','FZ','TP7','PZ','O2','GFP'};
 s.LineProperties(8).Color = 'red';
 
@@ -110,7 +114,7 @@ biplot(100*U(:,1:2),'varlabels',cellstr(channels))
 
 %% Cluster Analysis 
 
-%Valutazione del numero ottimale di cluster
+% Optimal number of cluster evaluation 
 E1 = evalclusters(eeg_at_peaks, 'kmeans', 'silhouette','klist', 1:7);
 figure; plot(E1); 
 % k = E1.OptimalK; 
@@ -118,7 +122,8 @@ figure; plot(E1);
 % [idx, C] = kmeans(eeg_at_peaks, k);
 % figure; silhouette(eeg_at_peaks, idx);
 
-k = 4; % K=4 seems ok when looking at data in PC space
+k = 4; 
+% By looking at data in PC space we can assume K=4
 idx = kmeans(eeg_at_peaks,k);  
 cols = {'b','r','g','m','c'};
 figure
@@ -192,46 +197,49 @@ end
 k = 4;
 [idx,C] = kmeans(eeg_at_peaks,k);
 
-% Plot delle mappe topografiche (relative ad un microstato) individuate
+% Identified topographic maps (associated to a microstate) plot 
 for i = 1 : k
    figure; plot_topography(channels, C(i,:));
    colormap(map);
 end
 
-%% Associazione di una mappa "template" generale ad ogni istante dei segnali eeg originali 
-% Ad ogni istante del segnale eeg originale viene associato univocamente
-% un microstato tra quelli individuati. 
+%% Association of a general "template" map to each instant of the original eeg signals
+% Each instant of the original eeg signal is uniquely associated
+% with a microstate among those identified.
 
 ms_at_peaks = zeros(length(eeg_at_peaks),1);
 for i = 1 : length(eeg_at_peaks)
     corrcoefs = zeros(1,k);
     for j = 1 : k
         M = corrcoef(eeg_at_peaks(i,:),C(j,:));
-        % calcolo correlazione tra istante del segnale eeg e mappa 'j'
+        % Compute correlation between instant 'i' of eeg signal and map 'j'
         corrcoefs(1,j) = M(1,2);
     end
     index = find(corrcoefs==max(corrcoefs));
     ms_at_peaks(i,1) = index;
-    % assegno all'istante i l'indice del ms con correlazione max con il
-    % segnale eeg allo stesso istante i.
+    % Microstates index with max correlation with eeg signal at instant 'i' 
+    % is assigned to the same instant
 end
-% il punto di cambio di microstato/mappa � a met� tra due picchi i cui 
+
+% We assume that the point of change between two consecutive microstates/maps 
+% is at half way between the two peaks
+
+% il punto di cambio di microstato/mappa è a metà tra due picchi i cui 
 % microstati/mappe corrispondenti sono diversi.
 ms_sequence = init_ms_seq(ms_at_peaks,locs);
 
-%% Analisi Statistica
+%% Statistical Analysis
 
-% Average Lifespan of MS: Tempo di vita medio di un microstato
+% Average Lifespan of MS
 ms_avg_lifespan = zeros(1,k);
 
-% Frequency of Appearance of MS: Frequenza di occorrenza di un microstato 
+% Frequency of Appearance of MS
 f_appear = zeros(1,k);
 
-% Fraction Total Covered Time of MS: Frazione di tempo totale coperta da un
-% microstato
+% Fraction Total Covered Time of MS
 total_covered_t_ms = zeros(1,k);
 
-% Calcolo dei parametri per ogni microstato
+% Compute parameters for each microstates 
 seq = cell(1,k); % vettori contenenti le lunghezze di ogni sequenza per ogni microstato
 for i = 1 : k
    idx = 1;
